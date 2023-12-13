@@ -36,14 +36,17 @@ def genetic_alg(population_size, num_gens, crossover_rate, mutation_rate, return
 
         # Realizando crossover
         crossover_indices = np.random.choice(selected_population.shape[0], size=population_size - selected_population.shape[0]) # Selecionando índices aleatórios
-        crossover_parents = selected_population[np.random.choice(selected_population.shape[0], size=crossover_indices.shape[0])] # Criando uma matriz de pais
+        crossover_parents = selected_population[np.random.choice(selected_population.shape[0], size=crossover_indices[0].shape[0], replace=True)] # Criando uma matriz de pais
+        crossover_mask = np.random.rand(*crossover_parents.shape) < crossover_rate # Criando uma máscara para indicar onde ocorrerá crossover
         new_individuals = np.copy(crossover_parents) # Criando uma matriz para filhos
-        crossover_mask = np.random.rand(*new_individuals.shape) < crossover_rate # Máscara que indica se o crossover ocorrerá
-        new_individuals[crossover_mask] = (crossover_parents[::2] + crossover_parents[1::2])[crossover_mask] # Realizando crossover ao somar valor dos pais
+        crossover_result = crossover_parents[::2] + crossover_parents[1::2]
+        crossover_indices = np.where(crossover_mask)
+        new_individuals[crossover_indices] = crossover_result[crossover_indices]
+
 
         # Realizando mutação - valores aleatórios
         mutation_mask = np.random.rand(*new_individuals.shape) < mutation_rate
-        new_individuals[mutation_mask] = np.random.rand(np.sum(mutation_mask))
+        new_individuals[mutation_mask] = np.random.rand(*new_individuals.shape)[mutation_mask]
 
         # Atualizando população
         population = np.vstack([selected_population, new_individuals])
