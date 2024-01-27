@@ -28,15 +28,13 @@ def simple_crossover(parents, crossover_rate):
     child1_mask = np.tile(child1_mask, (2, 1))
     child2_mask = np.tile(child2_mask, (2, 1))
 
-    # Criando filhos
-    child1 = parents[::2] * child1_mask[:num_rows] + parents[1::2] * child2_mask[:num_rows]
-    child2 = parents[1::2] * child1_mask[:num_rows] + parents[::2] * child2_mask[:num_rows]
+    # Criando cópias dos pais para evitar problemas de broadcasting
+    parents_copy = parents.copy()
 
-    # Aplicando crossover apenas nos indivíduos selecionados
-    parents[crossover_mask] = child1[crossover_mask]
-    parents[~crossover_mask] = child2[~crossover_mask]
+    # Aplicando crossover diretamente com multiplicação de máscaras
+    parents_copy[crossover_mask] = parents[::2][crossover_mask] * child1_mask[:num_rows][crossover_mask] + parents[1::2][crossover_mask] * child2_mask[:num_rows][crossover_mask]
 
-    return parents
+    return parents_copy
 
 # Algoritmo genético
 def genetic_alg(population_size, num_gens, crossover_rate, mutation_rate, returns):
