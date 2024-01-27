@@ -12,6 +12,32 @@ def constraint(weights):
 def initialize_population(population_size, num_assets):
     return np.random.rand(population_size, num_assets)
 
+# Função para um crossover básico
+def simple_crossover(parents, crossover_rate):
+    crossover_mask = np.random.rand(*parents.shape) < crossover_rate
+    crossover_point = np.random.randint(1, parents.shape[1])  # Ponto de corte aleatório
+
+    # Criando máscaras para os filhos
+    num_rows = parents.shape[0]
+    crossover_point = np.random.randint(1, parents.shape[1])  # Ponto de corte aleatório
+
+    child1_mask = np.hstack([np.ones((num_rows // 2, crossover_point)), np.zeros((num_rows // 2, parents.shape[1] - crossover_point))])
+    child2_mask = 1 - child1_mask
+
+    # Garantindo que as máscaras tenham o mesmo número de linhas que a população
+    child1_mask = np.tile(child1_mask, (2, 1))
+    child2_mask = np.tile(child2_mask, (2, 1))
+
+    # Criando filhos
+    child1 = parents[::2] * child1_mask[:num_rows] + parents[1::2] * child2_mask[:num_rows]
+    child2 = parents[1::2] * child1_mask[:num_rows] + parents[::2] * child2_mask[:num_rows]
+
+    # Aplicando crossover apenas nos indivíduos selecionados
+    parents[crossover_mask] = child1[crossover_mask]
+    parents[~crossover_mask] = child2[~crossover_mask]
+
+    return parents
+
 # Algoritmo genético
 def genetic_alg(population_size, num_gens, crossover_rate, mutation_rate, returns):
     num_assets = len(returns)
@@ -35,21 +61,16 @@ def genetic_alg(population_size, num_gens, crossover_rate, mutation_rate, return
         selected_population = population[selected_indices]
 
         # Realizando crossover
-        crossover_indices = np.random.choice(selected_population.shape[0], size=population_size - selected_population.shape[0]) # Selecionando índices aleatórios
-        crossover_parents = selected_population[np.random.choice(selected_population.shape[0], size=crossover_indices[0].shape[0], replace=True)] # Criando uma matriz de pais
-        crossover_mask = np.random.rand(*crossover_parents.shape) < crossover_rate # Criando uma máscara para indicar onde ocorrerá crossover
-        new_individuals = np.copy(crossover_parents) # Criando uma matriz para filhos
-        crossover_result = crossover_parents[::2] + crossover_parents[1::2]
-        crossover_indices = np.where(crossover_mask)
-        new_individuals[crossover_indices] = crossover_result[crossover_indices]
-
+        crossover_indices = np.random.choice(selected_population.shape[0], size=population_size - selected_population.shape[0])
+        crossover_parents = selected_population[crossover_indices, :]
+        selected_population = simple_crossover(selected_population, crossover_rate)
 
         # Realizando mutação - valores aleatórios
-        mutation_mask = np.random.rand(*new_individuals.shape) < mutation_rate
-        new_individuals[mutation_mask] = np.random.rand(*new_individuals.shape)[mutation_mask]
+        mutation_mask = np.random.rand(*selected_population.shape) < mutation_rate
+        selected_population[mutation_mask] = np.random.rand(*selected_population.shape)[mutation_mask]
 
         # Atualizando população
-        population = np.vstack([selected_population, new_individuals])
+        population = selected_population
 
     return best_fitness
     
