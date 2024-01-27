@@ -15,24 +15,27 @@ def initialize_population(population_size, num_assets):
 # Função para um crossover básico
 def simple_crossover(parents, crossover_rate):
     crossover_mask = np.random.rand(*parents.shape) < crossover_rate
-    crossover_point = np.random.randint(1, parents.shape[1])  # Ponto de corte aleatório
+
+    # Escolhendo ponto de crossover aleatório para cada par de pais
+    crossover_points = np.random.randint(1, parents.shape[1], size=parents.shape[0] // 2)
+
+    # Replicando os pontos de crossover para criar máscaras para todos os pais
+    crossover_points = np.hstack([crossover_points, crossover_points])
+    np.random.shuffle(crossover_points)
 
     # Criando máscaras para os filhos
-    num_rows = parents.shape[0]
-    crossover_point = np.random.randint(1, parents.shape[1])  # Ponto de corte aleatório
+    child1_mask = np.zeros_like(parents)
+    child2_mask = np.ones_like(parents)
 
-    child1_mask = np.hstack([np.ones((num_rows // 2, crossover_point)), np.zeros((num_rows // 2, parents.shape[1] - crossover_point))])
-    child2_mask = 1 - child1_mask
-
-    # Garantindo que as máscaras tenham o mesmo número de linhas que a população
-    child1_mask = np.tile(child1_mask, (2, 1))
-    child2_mask = np.tile(child2_mask, (2, 1))
+    for i, point in enumerate(crossover_points):
+        child1_mask[i*2:i*2+2, :point] = 1
+        child2_mask[i*2:i*2+2, :point] = 0
 
     # Criando cópias dos pais para evitar problemas de broadcasting
     parents_copy = parents.copy()
 
     # Aplicando crossover diretamente com multiplicação de máscaras
-    parents_copy[crossover_mask] = parents[::2][crossover_mask] * child1_mask[:num_rows][crossover_mask] + parents[1::2][crossover_mask] * child2_mask[:num_rows][crossover_mask]
+    parents_copy[crossover_mask] = parents[::2][crossover_mask] * child1_mask[::2][crossover_mask] + parents[1::2][crossover_mask] * child2_mask[1::2][crossover_mask]
 
     return parents_copy
 
