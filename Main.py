@@ -14,30 +14,28 @@ def initialize_population(population_size, num_assets):
 
 # Função para um crossover básico
 def simple_crossover(parents, crossover_rate):
-    crossover_mask = np.random.rand(*parents.shape) < crossover_rate
+    num_parents, num_genes = parents.shape
 
-    # Escolhendo ponto de crossover aleatório para cada par de pais
-    crossover_points = np.random.randint(1, parents.shape[1], size=parents.shape[0] // 2)
+    # Selecionado pares de pais
+    crossover_parents = np.random.choice(num_parents, size=(num_parents // 2, 2), replace=False)
 
-    # Replicando os pontos de crossover para criar máscaras para todos os pais
-    crossover_points = np.hstack([crossover_points, crossover_points])
-    np.random.shuffle(crossover_points)
+    # Inicializando filhos
+    children = np.zeros_like(parents)
 
-    # Criando máscaras para os filhos
-    child1_mask = np.zeros_like(parents)
-    child2_mask = np.ones_like(parents)
+    for i, (parent1_idx, parent2_idx) in enumerate(crossover_parents):
+        if np.random.rand() < crossover_rate:
+            # Selecionando ponto aleatório
+            crossover_point = np.random.randint(1, num_genes)
 
-    for i, point in enumerate(crossover_points):
-        child1_mask[i*2:i*2+2, :point] = 1
-        child2_mask[i*2:i*2+2, :point] = 0
+            # Cruzando
+            children[i*2, :] = np.concatenate([parents[parent1_idx, :crossover_point], parents[parent2_idx, crossover_point:]])
+            children[i*2 + 1, :] = np.concatenate([parents[parent2_idx, :crossover_point], parents[parent1_idx, crossover_point:]])
+        else:
+            # Se não cruzar, apenas copie os pais
+            children[i*2, :] = parents[parent1_idx, :]
+            children[i*2 + 1, :] = parents[parent2_idx, :]
 
-    # Criando cópias dos pais para evitar problemas de broadcasting
-    parents_copy = parents.copy()
-
-    # Aplicando crossover diretamente com multiplicação de máscaras
-    parents_copy[crossover_mask] = parents[::2][crossover_mask] * child1_mask[::2][crossover_mask] + parents[1::2][crossover_mask] * child2_mask[1::2][crossover_mask]
-
-    return parents_copy
+    return children
 
 # Algoritmo genético
 def genetic_alg(population_size, num_gens, crossover_rate, mutation_rate, returns):
